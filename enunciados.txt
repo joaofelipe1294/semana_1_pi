@@ -1,0 +1,6 @@
+Enunciados
+    1-Implemente um programa que realize uma amostragem de quantização em uma imagem monocromática.
+        O programa deve receber como parâmetros o nome da imagem, o porcentual de amostragem, os níveis de cinza e a técnica de quantização (média, mediana ou moda.)
+        A saída do programa deve ser a imagem amostrada.
+    2-Implemente um programa que calcule a diferença em tamanho (em número de pixels) das duas imagens abaixo, utilizando operações aritméticas e transformadas affine.
+
