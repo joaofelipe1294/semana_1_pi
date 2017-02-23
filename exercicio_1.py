@@ -11,6 +11,8 @@ import sys
 
 
 image = cv2.imread(sys.argv[1] , 0)
+min_value = sys.argv[2]
+max_value = sys.argv[3]
 cv2.imshow('image' , image)
 cv2.waitKey(0)
 
