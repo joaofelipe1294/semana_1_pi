@@ -10,6 +10,13 @@ import cv2
 import sys
 import math
 
+#######################################################################
+#constantes
+
+MEAN = 'mean'
+MEDIAN = 'median'
+MODE = 'mode'
+
 
 #######################################################################
 
@@ -53,75 +60,58 @@ class Quantization(object):
 
 class Sampling(object):
 	
-	def __init__(self , proportion , image):
-		self.proportion = proportion
+	def __init__(self , proportion , image , method):
+		self.proportion = proportion 
 		self.image = image
+		self.method = method
 
 	def apply(self):
-		height , width = self.image.shape
-		kernel_size = int(100.0 / self.proportion)
-		normalized_image = np.zeros(( self.image.shape[0] / kernel_size, self.image.shape[1] / kernel_size) , np.uint8)
-		#print('image_shape : ' + str(self.image.shape) + '  |  rescaled_shape : ' + str(normalized_image.shape))
-		#print(kernel_size)
-		kernel_values = []
-		for x in xrange(0 , self.image.shape[0] , kernel_size):
-			for y in xrange(0 , self.image.shape[1] , kernel_size):
-				values = []
-				for kernel_x in xrange(x , x + kernel_size):
-					for kernel_y in xrange(y , y + kernel_size):
-						if kernel_x < self.image.shape[0] and kernel_y < self.image.shape[1]:
-							values.append(self.image.item(kernel_x , kernel_y))
-				kernel_values.append(values)
-		#print(kernel_values)
-
-		#print(kernel_values)
-		index = 0
-		for x in xrange(0 , normalized_image.shape[0]):
-			for y in xrange(0 , normalized_image.shape[1]):
-				#print('original : ' + str(self.image.item(x , y)) + '  |  re_scaled : ' + str(self.mean(kernel_values[index])) + '  |  x : ' + str(x) + '  |  y : ' + str(y))
-				#print('x : ' + str(x) + '  |  y : ' + str(y))
-				normalized_image.itemset(x , y , self.mean(kernel_values[index]))
+		height , width = self.image.shape #recupera as dimensoes da imagem
+		kernel_size = int(100.0 / self.proportion) #calcula o tamanho do kernel
+		re_sized_image = np.zeros(( self.image.shape[0] / kernel_size, self.image.shape[1] / kernel_size) , np.uint8) #calcula as medidas da nova imagem
+		kernel_values = [] #lista que ira conter os valores preenxidos de cada kernel
+		for x in xrange(0 , self.image.shape[0] , kernel_size): #loop que varre as linhas
+			for y in xrange(0 , self.image.shape[1] , kernel_size): #loop que varre as colunas
+				values = [] #lista com os valores referentes a um kernel
+				for kernel_x in xrange(x , x + kernel_size): #loop que que varre as linhas do kernel
+					for kernel_y in xrange(y , y + kernel_size): #loop que varre as colunas do kernel
+						if kernel_x < self.image.shape[0] and kernel_y < self.image.shape[1]: #verifica se o indice eh valido
+							values.append(self.image.item(kernel_x , kernel_y)) #pega valor da imagem original
+				kernel_values.append(values) #adiciona o kernel na lista que contem os kernels
+		index = 0 
+		for x in xrange(0 , re_sized_image.shape[0]): #loop que varre as linhas da imagem redimensionada
+			for y in xrange(0 , re_sized_image.shape[1]): #loop que varre as colunas da imagem redimensionada
+				if self.method == MEAN: #define valor usado para imagem rescalonada
+					re_sized_image.itemset(x , y , self.mean(kernel_values[index])) 
+				elif self.method == MEDIAN:
+					re_sized_image.itemset(x , y , self.median(kernel_values[index]))
+				elif self.method == MODE:
+					re_sized_image.itemset(x , y , self.mode(kernel_values[index]))
 				index += 1
-		#	print()
-		#print(normalized_image)
-		#print(normalized_image.shape)
-		#print(self.image.shape)
-		#print(normalized_image)
-		
-		#normalized_image.itemset(0,45,255)
-		#normalized_image.itemset(0,46,255)
-		#normalized_image.itemset(0,47,255)
-		#normalized_image.itemset(0,48,255)
-		#normalized_image.itemset(0,49,255)
-		#var = self.image[0 , :]
-		#print(var[:2])
-		#end = list(var[:2])
-		#start = list(var[2:])
-		#norm = np.array((start + end) , np.uint8)
-		#np.array( end + start, np.uint8)
-		#print(var)
-		#print(norm)
-		#print(var.pop(0))
-		
-
-		#corrige o desvio gerado
-		if self.proportion < 100:
-			norm_lines = []
-			for line_index in xrange(0 , normalized_image.shape[0]):
-				line = normalized_image[line_index , :]
-				start = list(line[line_index:])
-				end = list(line[:line_index])
-				norm_line = np.array((start + end) , np.uint8)
-				norm_lines.append(norm_line)
-			normalized_image = np.array(norm_lines , np.uint8)
-
-
-		return normalized_image
+			#corrige o desvio gerado
+		if self.proportion < 100: #o redimensionamento gera uma distorcao que deve ser corrigida
+			norm_lines = [] #lista com as linhas corrigidas
+			for line_index in xrange(0 , re_sized_image.shape[0]): #loop que itera sobre as linhas da imagem redimensionada
+				line = re_sized_image[line_index , :] #recupera uma linha completa da imagem redimensionada
+				start = list(line[line_index:]) #recupera os elementos posicionados errado na nova imagem
+				end = list(line[:line_index]) #seleciona os elementos corretos da linha
+				norm_line = np.array((start + end) , np.uint8) #cria um novo np.array com o desvio corrigido
+				norm_lines.append(norm_line) 
+			re_sized_image = np.array(norm_lines , np.uint8) #recria a imagem redimensionada com o desvio corrigido
+		return re_sized_image
 
 	def mean(self , values):
 		values = np.array( values, np.uint8)
-		#print('values : ' + str(values) + '  |  mean : ' + str(int(np.mean(values))))
 		return int(np.mean(values))
+
+	def median(self , values):
+		values = np.array(values , np.uint8)
+		return int(np.median(values))
+
+	def mode(self , values):
+		a = np.array(values , np.uint8)
+		counts = np.bincount(a)
+		return np.argmax(counts)		
 
 
 #######################################################################
@@ -130,6 +120,7 @@ class Sampling(object):
 image = cv2.imread(sys.argv[1] , 0)
 re_scale_proportion = int(sys.argv[2])
 gray_values = int(sys.argv[3])
+re_scale_method = sys.argv[4]
 normalized_image = Quantization(image , gray_chanels = gray_values).apply() #binary_normalization(image)
 
 test_image = np.array(([ 0 , 15 , 23 , 15 , 30 , 120] ,
@@ -142,15 +133,7 @@ test_image = np.array(([ 0 , 15 , 23 , 15 , 30 , 120] ,
 
 
 
-re_scaled_image = Sampling(re_scale_proportion , image).apply()
-
-
-
-
-
-
-
-
+re_scaled_image = Sampling(re_scale_proportion , image , re_scale_method).apply()
 cv2.imshow('original_image' , image)
 cv2.imshow('normalized_image' , normalized_image)
 cv2.imshow('re_caled' , re_scaled_image)
