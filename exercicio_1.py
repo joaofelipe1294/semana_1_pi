@@ -89,7 +89,9 @@ class Sampling(object):
 					re_sized_image.itemset(x , y , self.mode(kernel_values[index]))
 				index += 1
 			#corrige o desvio gerado
-		if self.proportion < 100: #o redimensionamento gera uma distorcao que deve ser corrigida
+		if self.proportion == 100:
+			re_sized_image = self.image
+		elif (width * 0.75) > height: #or ((width * 0.75) > height and self.proportion == 100):  #self.proportion < 100: #o redimensionamento gera uma distorcao que deve ser corrigida
 			norm_lines = [] #lista com as linhas corrigidas
 			for line_index in xrange(0 , re_sized_image.shape[0]): #loop que itera sobre as linhas da imagem redimensionada
 				line = re_sized_image[line_index , :] #recupera uma linha completa da imagem redimensionada
@@ -98,6 +100,7 @@ class Sampling(object):
 				norm_line = np.array((start + end) , np.uint8) #cria um novo np.array com o desvio corrigido
 				norm_lines.append(norm_line) 
 			re_sized_image = np.array(norm_lines , np.uint8) #recria a imagem redimensionada com o desvio corrigido
+			
 		return re_sized_image
 
 	def mean(self , values):
@@ -117,12 +120,26 @@ class Sampling(object):
 #######################################################################
 
 
-image = cv2.imread(sys.argv[1] , 0)
-re_scale_proportion = int(sys.argv[2])
-gray_values = int(sys.argv[3])
-re_scale_method = sys.argv[4]
-normalized_image = Quantization(image , gray_chanels = gray_values).apply() #binary_normalization(image)
+try:
+	image = cv2.imread(sys.argv[1] , 0)	
+	print(image.shape)
+	re_scale_proportion = int(sys.argv[2])
+	gray_values = int(sys.argv[3])
+	re_scale_method = sys.argv[4]
+	normalized_image = Quantization(image , gray_chanels = gray_values).apply() #binary_normalization(image)
+	re_scaled_image = Sampling(re_scale_proportion , image , re_scale_method).apply()
+	cv2.imshow('original_image' , image)
+	cv2.imshow('normalized_image' , normalized_image)
+	cv2.imshow('re_caled' , re_scaled_image)
+	cv2.waitKey(0)
+except Exception as e:
+	print('Numero errado de parametros.')
+	print('Parametros : image_path resize_proportion gray_values re_scale_method')
+#	raise e
+	
 
+
+'''
 test_image = np.array(([ 0 , 15 , 23 , 15 , 30 , 120] ,
 					   [ 42 , 80 , 35 , 172 , 200 , 255] , 
 					   [ 255 , 120 , 40 , 15 , 35 , 180] , 
@@ -130,13 +147,4 @@ test_image = np.array(([ 0 , 15 , 23 , 15 , 30 , 120] ,
 					   [ 70 , 10 , 8 , 16 , 45 , 120 ] ,
 					   [ 35 , 45 , 70 , 85 , 88 , 0]) ,
 					   np.uint8)
-
-
-
-re_scaled_image = Sampling(re_scale_proportion , image , re_scale_method).apply()
-cv2.imshow('original_image' , image)
-cv2.imshow('normalized_image' , normalized_image)
-cv2.imshow('re_caled' , re_scaled_image)
-cv2.waitKey(0)
-
-#print(sys.argv)
+'''
