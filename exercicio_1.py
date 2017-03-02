@@ -103,7 +103,6 @@ class Sampling(object):
 				re_sized_image = np.array(norm_lines , np.uint8) #recria a imagem redimensionada com o desvio corrigido
 			return re_sized_image
 		elif self.proportion > 100:
-			print('YO')
 			height , width = self.image.shape #recupera as dimensoes da imagem
 			re_sized_image = cv2.resize( self.image , (int(((float(self.proportion) / 100) * width)) , int((float(self.proportion) / 100) * height )) , interpolation = cv2.INTER_CUBIC)
 			return re_sized_image
